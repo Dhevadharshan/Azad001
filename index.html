@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IoT Query Handler</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #4C585B;
+            color: #F4EDD3;
+            position: relative;
+            overflow: hidden;
+        }
+
+        header {
+            text-align: center;
+            padding: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #F4EDD3;
+            position: absolute;
+            top: 20px;
+            width: 100%;
+        }
+
+        .iot-component {
+            position: absolute;
+            font-size: 12px; /* Smaller font size to allow more words */
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.3s ease, color 0.3s ease, font-size 0.3s ease, opacity 0.3s ease;
+            white-space: nowrap;
+            user-select: none;
+            opacity: 0.8;
+        }
+
+        .iot-component:hover {
+            font-size: 24px;
+            opacity: 1;
+            z-index: 10;
+            transform: rotate(0deg); /* Make sure the word stays straight */
+        }
+
+        .tooltip {
+            position: absolute;
+            display: none;
+            background: rgba(0, 0, 0, 0.9);
+            color: #F4EDD3;
+            padding: 6px 10px;
+            font-size: 12px;
+            border-radius: 4px;
+            white-space: nowrap;
+            z-index: 1000;
+            transform: translateX(10px); /* Offset tooltip to the right */
+        }
+
+        .tooltip::after {
+            content: "";
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 5px;
+            border-style: solid;
+            border-color: rgba(0, 0, 0, 0.9) transparent transparent transparent;
+        }
+
+        .chat-container {
+            position: fixed;
+            top: 20%;
+            right: 20px;
+            width: 550px;
+            height: 500px;
+            background: #F4EDD3;
+            color: #4C585B;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 100;
+        }
+
+        .chat-container h2 {
+            text-align: center;
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+
+        .chat-container textarea {
+            width: 100%;
+            height: 200px;
+            margin: 10px 0;
+            padding: 10px;
+            font-size: 14px;
+            border: 1px solid #A5BFCC;
+            border-radius: 4px;
+        }
+
+        .chat-container button {
+            width: 100%;
+            padding: 10px;
+            background-color: #7E99A3;
+            color: white;
+            font-size: 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .chat-container button:hover {
+            background-color: #4C585B;
+        }
+
+        .chat-container .response {
+            margin-top: 10px;
+            padding: 10px;
+            background: #A5BFCC;
+            color: #4C585B;
+            font-size: 14px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow: auto;
+            max-height: 180px;
+        }
+
+        footer {
+            position: fixed;
+            bottom: 10px;
+            width: 100%;
+            text-align: center;
+            font-size: 14px;
+            color: #F4EDD3;
+        }
+
+        footer a {
+            color: #F4EDD3;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        .dimmed {
+            opacity: 0.3 !important; /* Dims the surrounding words */
+        }
+    </style>
+</head>
+<body>
+    <header>Azad Matriculation and Higher Secondary School</header>
+
+    <div class="chat-container">
+        <h2>IoT Query Handler</h2>
+        <textarea id="query" placeholder="Enter your IoT-related query..."></textarea>
+        <button onclick="sendQuery()">Submit Query</button>
+        <div id="response" class="response"></div>
+    </div>
+
+    <footer>
+        Powered by <a href="http://www.doso.solutions" target="_blank">DoSo Solutions</a>
+    </footer>
+
+    <script>
+        // IoT components with brief descriptions
+        const components = [
+            { name: "Temperature Sensor", info: "Measures temperature for monitoring systems." },
+            { name: "Humidity Sensor", info: "Tracks air moisture levels." },
+            { name: "Pressure Sensor", info: "Monitors atmospheric pressure." },
+            { name: "Wi-Fi Module", info: "Wireless communication module (e.g., ESP8266)." },
+            { name: "Bluetooth Module", info: "Short-range wireless module (e.g., HC-05)." },
+            { name: "NFC Module", info: "Near-field communication module." },
+            { name: "MQTT Broker", info: "Manages IoT message exchange (e.g., Mosquitto)." },
+            { name: "Grafana", info: "Tool for data visualization and monitoring." },
+            { name: "MongoDB", info: "NoSQL database for IoT data storage." },
+            { name: "LoRaWAN Module", info: "Low-range wide-area network communication." },
+            { name: "Smart Blinds", info: "Automated window coverings for smart homes." },
+            { name: "LED Light Strip", info: "LED strips for lighting and decoration." },
+            { name: "DC Motor", info: "A motor for mechanical movement." },
+            { name: "Solenoid Valve", info: "Control valve for regulating fluid flow." },
+            { name: "Servo Motor", info: "Rotary actuator for precise movement." },
+            { name: "Stepper Motor", info: "Motor for controlled rotation in steps." },
+            { name: "Zigbee Module", info: "Wireless communication for short-range devices." },
+            { name: "Accelerometer", info: "Measures acceleration and motion." },
+            { name: "Smoke Detector", info: "Detects the presence of smoke." },
+            { name: "pH Sensor", info: "Monitors acidity/alkalinity in solutions." },
+            { name: "Water Quality Sensor", info: "Monitors water quality parameters." },
+        ];
+
+        const container = document.body;
+        const tooltip = document.createElement('div');
+        tooltip.className = 'tooltip';
+        document.body.appendChild(tooltip);
+
+        const random = (min, max) => Math.random() * (max - min) + min;
+
+        // Add IoT components in random positions with different colors
+        for (let i = 0; i < 500; i++) {
+            const component = components[Math.floor(Math.random() * components.length)];
+            const div = document.createElement('div');
+            div.className = 'iot-component';
+            div.textContent = component.name;
+
+            // Randomize position and rotation angle
+            div.style.left = `${random(0, window.innerWidth - 100)}px`;
+            div.style.top = `${random(100, window.innerHeight - 100)}px`;
+            div.style.transform = `rotate(${random(0, 170)}deg)`;
+
+            // Random color for each word to contrast the background
+            const colorPalette = ['#F4EDD3', '#A5BFCC', '#7E99A3', '#3666e0', '#7C8B8C', '#F4EDD3', '#A5BFCC', '#7E99A3', '#3666e0', '#7C8B8C'];
+            div.style.color = colorPalette[Math.floor(Math.random() * colorPalette.length)];
+
+            // Setting smaller gap between the words
+            div.style.fontSize = '12px';
+            container.appendChild(div);
+
+            // Tooltip behavior
+            div.addEventListener('mouseover', () => {
+                tooltip.textContent = component.info;
+                tooltip.style.display = 'block';
+                tooltip.style.left = `${div.offsetLeft}px`;
+                tooltip.style.top = `${div.offsetTop - 30}px`;
+
+                // Make the word bigger and dim surrounding words
+                div.style.fontSize = '24px';
+                div.style.opacity = '1';
+                div.style.transform = 'rotate(0deg)'; // Ensure word is straight
+
+                // Dim surrounding words
+                const allWords = document.querySelectorAll('.iot-component');
+                allWords.forEach(word => {
+                    if (word !== div) {
+                        word.classList.add('dimmed');
+                    }
+                });
+            });
+
+            div.addEventListener('mouseout', () => {
+                tooltip.style.display = 'none';
+                div.style.fontSize = '12px';
+                div.style.opacity = '0.8';
+                div.style.transform = `rotate(${random(0, 170)}deg)`; // Restore random rotation
+
+                // Remove dimming effect from surrounding words
+                const allWords = document.querySelectorAll('.iot-component');
+                allWords.forEach(word => {
+                    word.classList.remove('dimmed');
+                });
+            });
+        }
+
+        // Send query function
+        async function sendQuery() {
+            const query = document.getElementById('query').value;
+            const responseDiv = document.getElementById('response');
+
+            if (!query.trim()) {
+                responseDiv.textContent = "Please enter a valid query.";
+                return;
+            }
+
+            responseDiv.textContent = "Processing...";
+
+            try {
+                const response = await fetch('http://localhost:3000/api/query', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ query })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status} ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                const answer = data.answer || "No valid response received.";
+
+                responseDiv.innerHTML = `<strong>Answer:</strong> ${answer}`;
+            } catch (error) {
+                console.error("Error details:", error);
+                responseDiv.textContent = "Error fetching response. Please check your server.";
+            }
+        }
+    </script>
+</body>
+</html>
